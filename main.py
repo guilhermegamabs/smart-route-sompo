@@ -2,6 +2,17 @@ import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from db.connection import get_engine, create_tables, get_session
 from db.models import Ocorrencia
+from db.utils import carregar_dados_do_banco
+from analise.risco import classificar_niveis_risco
+
+def atualizar_risco_no_banco(session, df):
+    for _, row in df.iterrows():
+        ocorrencia = session.query(Ocorrencia).filter_by(id=row['id']).first()
+        if ocorrencia:
+            ocorrencia.risco = row['Risco']
+            print(f"Atualizando id {row['id']} com risco {row['Risco']}")
+    session.commit()
+    print("✅ Coluna risco atualizada no banco.")
 
 def importar_dados(session, df):
     registros_inseridos = 0
@@ -46,6 +57,13 @@ def main():
 
         print(f"📊 Total de registros na planilha: {len(df)}")
         importar_dados(session, df)
+        
+        df = carregar_dados_do_banco(session)
+        print(f"📊 Total de registros carregados do banco para classificação: {len(df)}")
+
+        df = classificar_niveis_risco(df)
+
+        atualizar_risco_no_banco(session, df)
 
     except SQLAlchemyError as e:
         print(f"❌ Erro no banco de dados: {e}")

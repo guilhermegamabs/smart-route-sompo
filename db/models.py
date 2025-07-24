@@ -13,3 +13,4 @@ class Ocorrencia(Base):
     ocorrencias = Column(Integer)
     latitude = Column(Float)
     longitude = Column(Float)
+    risco = Column(String, nullable = True)
